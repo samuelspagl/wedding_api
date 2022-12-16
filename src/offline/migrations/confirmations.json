@@ -1,0 +1,21 @@
+{
+    "Table":{
+        "TableName": "confirmations-table",
+        "KeySchema":[
+            {
+                "AttributeName": "confirmationId",
+                "KeyType" : "HASH"
+            }
+        ],
+        "AttributeDefinitions":[
+            {
+                "AttributeName": "confirmationId",
+                "AttributeType": "S"
+            }
+        ],
+        "ProvisionedThoughput": {
+            "ReadCpacityUnits": 1,
+            "WriteCapacityUnits": 1
+        }
+    }
+}
