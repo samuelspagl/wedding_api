@@ -1,0 +1,21 @@
+{
+    "Table":{
+        "TableName": "presents-table",
+        "KeySchema":[
+            {
+                "AttributeName": "presentId",
+                "KeyType" : "HASH"
+            }
+        ],
+        "AttributeDefinitions":[
+            {
+                "AttributeName": "presentId",
+                "AttributeType": "S"
+            }
+        ],
+        "ProvisionedThoughput": {
+            "ReadCpacityUnits": 1,
+            "WriteCapacityUnits": 1
+        }
+    }
+}

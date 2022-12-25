@@ -1,0 +1,151 @@
+org: samuelspagl
+app: wedding-api
+service: wedding-backapiend
+
+plugins:
+  - serverless-offline
+  - serverless-dynamodb-local
+
+custom:
+  confirmationTableName: 'confirmations-table-${sls:stage}'
+  presentsTableName: 'presents-table-${sls:stage}'
+  dynamodb:
+    stages:
+      - dev
+    start:
+      port: 9998
+      inMemory: true
+      migrate: true
+    migration:
+      dir: src/offline/migrations    	
+  # Enable or disable caching globally
+  apiGatewayCaching:
+    enabled: true
+
+provider:
+  name: aws
+  runtime: nodejs14.x
+  stage: beta
+  region: eu-central-1
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:Query
+            - dynamodb:Scan
+            - dynamodb:GetItem
+            - dynamodb:PutItem
+            - dynamodb:UpdateItem
+            - dynamodb:DeleteItem
+          Resource:
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONFIRMATION_TABLE}
+            - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.PRESENTS_TABLE}
+  environment:
+    CONFIRMATION_TABLE: ${self:custom.confirmationTableName}
+    PRESENTS_TABLE: ${self:custom.presentsTableName}
+    GUEST_KEY: ${GUEST_PASSWORD}
+    DASHBOARD_KEY: ${DASHBOARD_PASSWORD}
+    GUEST_STATE_KEY: ${GUEST_STATE_KEY}
+    DASHBOARD_STATE_KEY: ${DASHBOARD_STATE_KEY}
+
+
+
+functions:
+  login:
+    handler: src/lambda/login_handler.handler
+    events:
+      - http:
+          path: login
+          method: post
+          cors:
+            origin: 'http://localhost:8000' # <-- Specify allowed origin
+            headers: # <-- Specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+      - http:
+          path: login
+          method: options
+  presents:
+    handler: src/lambda/presents_handler.handler
+    events:
+      - http:
+          path: presents
+          method: get
+          cors: true
+      - http:
+          path: presents
+          method: put
+          cors:
+            origin: 'http://localhost:8000' # <-- Specify allowed origin
+            headers: # <-- Specify allowed headers
+              - Content-Type
+              - X-Amz-Date
+              - Authorization
+              - X-Api-Key
+              - X-Amz-Security-Token
+              - X-Amz-User-Agent
+
+      - http:
+          path: presents
+          method: post
+          cors: true
+      - http:
+          path: presents
+          method: delete
+          cors: true
+      - http:
+          path: presents
+          method: options
+
+  confirmations:
+    handler: src/lambda/confirmations_handler.handler
+    events:
+      - http:
+          path: confirmations
+          method: get
+          cors: true
+      - http:
+          path: confirmations
+          method: put
+          cors: true
+      - http:
+          path: confirmations
+          method: post
+          cors: true
+      - http:
+          path: confirmations
+          method: delete
+          cors: true
+      - http:
+          path: confirmations
+          method: options
+
+resources:
+  Resources:
+    ConfirmationsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: confirmationId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: confirmationId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.confirmationTableName}
+    PresentsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        AttributeDefinitions:
+          - AttributeName: presentId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: presentId
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+        TableName: ${self:custom.presentsTableName}
